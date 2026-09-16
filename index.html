@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini 輔導紀錄解析與試算表同步系統</title>
+    <title>學生輔導紀錄整理與雲端同步系統</title>
     <style>
         :root {
             --primary: #2563eb;
@@ -285,13 +285,13 @@
         <h2>步驟 1：貼上 Gem / Gemini 生成的輔導紀錄</h2>
         
         <div class="tip-box">
-            💡 <strong>貼心提示：</strong>可以直接把 Gemini 生成的整篇回覆複製貼在下方。<br>
-            系統支援標準格式（如 <code>[座號: 16] [姓名: 黃軍翔] [日期: 2026-09-16] [情況: ...] [結論: ...]</code>），也具備<strong>一般文字智慧解析</strong>功能！
+            💡 <strong>使用提醒：</strong>請直接把 Gemini 生成的整篇回覆文字貼在下方文字框中。<br>
+            系統會自動辨識學生座號、姓名、日期、情況與結論，並自動對應 40 位學生的完整學號！
         </div>
 
         <div class="form-group">
-            <label for="aiRawPaste">直接在此貼上 Gemini 的回覆文字：</label>
-            <textarea id="aiRawPaste" style="min-height: 250px; font-family: monospace;" placeholder="將 Gemini 的文字複製後，直接貼在這裡..."></textarea>
+            <label for="aiRawPaste">直接在此貼上文字：</label>
+            <textarea id="aiRawPaste" style="min-height: 260px; font-family: monospace;" placeholder="請在此貼上 Gemini 產生的文字內容..."></textarea>
         </div>
 
         <div class="btn-group" style="justify-content: flex-end;">
@@ -302,7 +302,7 @@
     <!-- 第二頁：檢視與編輯個別學生分頁 -->
     <div class="card page" id="page2">
         <h2>步驟 2：檢視與微調個別學生視角紀錄</h2>
-        <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 14px;">點選學生標籤可切換不同學生的專屬紀錄：</p>
+        <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 14px;">點選上方按鈕可切換不同學生的專屬紀錄：</p>
 
         <!-- 學生分頁標籤 (Tabs) -->
         <div class="tabs" id="parsedTabsContainer"></div>
@@ -325,7 +325,7 @@
         </div>
 
         <div class="form-group">
-            <label id="conclusionLabel">輔導結論與策略</label>
+            <label id="conclusionLabel">輔導結論與處遇策略</label>
             <textarea id="editConclusion" style="min-height: 110px;"></textarea>
         </div>
 
@@ -362,16 +362,16 @@
         </div>
 
         <div class="btn-group" style="margin-top: 24px;">
-            <button class="btn btn-secondary" onclick="startNewRecord()">➕ 繼續貼上下一批紀錄</button>
+            <button class="btn btn-secondary" onclick="startNewRecord()">➕ 繼續整理下一筆紀錄</button>
         </div>
     </div>
 </div>
 
 <script>
-    // 你的專屬 Google Apps Script Web App 網址
+    // 已完整綁定你的 Google Apps Script Web App 網址
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbypeuCqNeViNLLBa3sZyJs2_A6hvE-q2pgdU2x9gtnHNLLqcVUYa2Uh10nErYQK-zJ3Hw/exec";
 
-    // 40 位學生完整名冊（座號、學號、姓名自動比對）
+    // 40 位學生完整名冊
     const studentData = [
         { seat: "01", id: "355181", name: "方麒皓" },
         { seat: "02", id: "355205", name: "向廣誠" },
@@ -428,57 +428,52 @@
     let parsedRecords = [];
     let currentActiveIndex = 0;
 
-    // 核心：解析貼上的文字
+    // 解析貼上的文字
     function parseAITextAndProceed() {
         const text = document.getElementById('aiRawPaste').value.trim();
         if (!text) {
-            alert('請先貼上 Gemini 的生成內容！');
+            alert('請先貼上生成內容！');
             return;
         }
 
         parsedRecords = [];
         const todayStr = new Date().toISOString().split('T')[0];
 
-        // 判斷是否使用區隔線分段，若無則整份解析
+        // 判斷是否使用區隔線分段
         const blocks = text.split(/(?:---|\n={3,}\n|===)/).map(b => b.trim()).filter(b => b.length > 0);
 
         blocks.forEach(block => {
-            // 抓取座號 (如：[座號: 16] 或 座號：16 或 16號)
             let seat = "";
             const seatMatch = block.match(/(?:座號|學生座號|號碼)[：:\s]*(\d{1,2})/i) || block.match(/(\d{1,2})\s*號/);
             if (seatMatch) {
                 seat = seatMatch[1].padStart(2, '0');
             }
 
-            // 抓取姓名
             let name = "";
             const nameMatch = block.match(/(?:姓名|學生姓名|學生)[：:\s]*([\u4e00-\u9fa5]{2,4})/);
             if (nameMatch) {
                 name = nameMatch[1];
             }
 
-            // 抓取日期
             let date = todayStr;
             const dateMatch = block.match(/(?:日期|輔導日期|時間)[：:\s]*(\d{4}[-/年]\d{1,2}[-/月]\d{1,2}日?)/);
             if (dateMatch) {
                 date = dateMatch[1].replace(/年|月/g, '-').replace(/日/g, '').replace(/\//g, '-');
             }
 
-            // 抓取情況描述
             let situation = "";
             const sitMatch = block.match(/(?:情況|情況描述|晤談情況|事件經過)[：:\s]*([\s\S]*?)(?=(?:結論|輔導結論|處遇|策略|$))/i);
             if (sitMatch) {
                 situation = sitMatch[1].trim();
             }
 
-            // 抓取結論
             let conclusion = "";
             const conMatch = block.match(/(?:結論|輔導結論|處遇策略|後續處遇)[：:\s]*([\s\S]*?)$/i);
             if (conMatch) {
                 conclusion = conMatch[1].trim();
             }
 
-            // 若沒有標籤，嘗試自動從名冊比對姓名或座號
+            // 比對學生名冊
             if (!seat && name) {
                 const found = studentData.find(s => s.name === name);
                 if (found) seat = found.seat;
@@ -487,7 +482,6 @@
                 if (found) name = found.name;
             }
 
-            // 比對學號
             let sid = "";
             const studentInfo = studentData.find(s => s.seat === seat || s.name === name);
             if (studentInfo) {
@@ -496,7 +490,6 @@
                 sid = studentInfo.id;
             }
 
-            // 如果有解析到學生資訊或內容
             if (seat || name || situation) {
                 parsedRecords.push({
                     seatNo: seat || "未指定",
@@ -504,13 +497,13 @@
                     name: name || "未指定",
                     date: date,
                     situation: situation || block,
-                    conclusion: conclusion || "持續關懷追蹤。"
+                    conclusion: conclusion || "持續追蹤觀察與個別輔導。"
                 });
             }
         });
 
         if (parsedRecords.length === 0) {
-            alert('未能辨識出學生資料，請確認格式或包含「座號/姓名、情況、結論」關鍵字！');
+            alert('未能辨識出學生資料，請確認內容中包含「座號/姓名、情況、結論」關鍵字！');
             return;
         }
 
@@ -623,7 +616,7 @@
         document.body.removeChild(link);
     }
 
-    // 連動 Google Apps Script (直接傳送至試算表 Web App)
+    // 連動 Google Apps Script 傳送至試算表
     function syncToGoogleSheets() {
         if (allRecords.length === 0) {
             alert('目前尚無紀錄可同步！');
@@ -647,7 +640,7 @@
             if (data && data.status === "success") {
                 alert(`🎉 成功寫入 Google 試算表！共同步 ${data.count} 筆學生紀錄。`);
             } else {
-                alert(`已送出寫入請求，請前往 Google 試算表確認更新。`);
+                alert(`已發出寫入請求，請至 Google 試算表確認更新。`);
             }
             btn.disabled = false;
             btn.textContent = originalText;
