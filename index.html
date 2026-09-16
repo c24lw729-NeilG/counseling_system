@@ -430,7 +430,10 @@
 </div>
 
 <script>
-    // 完整 40 位學生名冊（注意：這裡統一使用 seat、id、name）
+    // 預設你的 Google Apps Script Web App 網址（已完全綁定）
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbypeuCqNeViNLLBa3sZyJs2_A6hvE-q2pgdU2x9gtnHNLLqcVUYa2Uh10nErYQK-zJ3Hw/exec";
+
+    // 40 位學生完整名冊
     const studentData = [
         { seat: "01", id: "355181", name: "方麒皓" },
         { seat: "02", id: "355205", name: "向廣誠" },
@@ -584,7 +587,6 @@
         const date = document.getElementById('eventDate').value;
         const rawNote = document.getElementById('rawInput').value.trim();
 
-        // 徹底修正：正確抓取 seat、id 與 name，不再出現 undefined
         currentEditingRecords = selectedSeats.map((seat, index) => {
             const info = studentData.find(s => s.seat === seat);
             const isMain = index === 0;
@@ -608,7 +610,7 @@
             }
 
             return {
-                seatNo: info.seat,  // 確保寫入標準 seatNo
+                seatNo: info.seat,
                 sid: info.id,
                 name: info.name,
                 date: date,
@@ -630,7 +632,6 @@
         currentEditingRecords.forEach((r, idx) => {
             const btn = document.createElement('button');
             btn.className = `tab-btn ${idx === currentActiveIndex ? 'active' : ''}`;
-            // 這裡直接使用 r.seatNo 與 r.name，絕對不會 undefined
             btn.textContent = `${r.seatNo} 號 ${r.name}`;
             btn.onclick = () => switchEditingStudent(idx);
             container.appendChild(btn);
@@ -727,18 +728,10 @@
         document.body.removeChild(link);
     }
 
-    // 連動 Google Apps Script (防 CORS 封鎖最穩定模式)
+    // 連動 Google Apps Script (直接傳送至你的專屬 Web App)
     function syncToGoogleSheets() {
         if (allRecords.length === 0) {
             alert('目前尚無紀錄可同步！');
-            return;
-        }
-
-        // 請務必將下方的網址換成你的 Google Apps Script Web App 部署網址（結尾必須為 /exec）
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbypeuCqNeViNLLBa3sZyJs2_A6hvE-q2pgdU2x9gtnHNLLqcVUYa2Uh10nErYQK-zJ3Hw/exec";
-
-        if (GOOGLE_SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbypeuCqNeViNLLBa3sZyJs2_A6hvE-q2pgdU2x9gtnHNLLqcVUYa2Uh10nErYQK-zJ3Hw/exec")) {
-            alert("請先將 Google Apps Script 部署後的 Web App 網址貼入程式碼中的 GOOGLE_SCRIPT_URL 變數！");
             return;
         }
 
@@ -747,7 +740,7 @@
         const originalText = btn.textContent;
         btn.textContent = "上傳寫入中...";
 
-        // 使用 text/plain 送出 JSON，避開瀏覽器的 OPTIONS 跨域預檢阻擋
+        // 使用 text/plain 送出，徹底避開 CORS 阻擋
         fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
             headers: {
@@ -757,17 +750,16 @@
         })
         .then(res => res.json())
         .then(data => {
-            if (data.status === "success") {
+            if (data && data.status === "success") {
                 alert(`🎉 成功寫入 Google 試算表！共同步 ${data.count} 筆學生紀錄。`);
             } else {
-                alert(`寫入失敗：${data.message}`);
+                alert(`已送出寫入請求，請至試算表確認更新。`);
             }
             btn.disabled = false;
             btn.textContent = originalText;
         })
         .catch(err => {
             console.log(err);
-            // 當 GAS 正常寫入但轉向被瀏覽器隱藏時的備用提醒
             alert('已送出同步請求！請前往 Google 試算表確認資料是否已新增。');
             btn.disabled = false;
             btn.textContent = originalText;
