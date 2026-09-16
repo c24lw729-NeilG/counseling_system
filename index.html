@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>學生輔導紀錄多向生成系統</title>
+    <title>Gemini 輔導紀錄解析與試算表同步系統</title>
     <style>
         :root {
             --primary: #2563eb;
@@ -30,7 +30,7 @@
         }
 
         .container {
-            max-width: 960px;
+            max-width: 980px;
             margin: 0 auto;
         }
 
@@ -117,7 +117,7 @@
             color: #334155;
         }
 
-        select, input[type="text"], input[type="date"], textarea {
+        input[type="text"], input[type="date"], textarea, select {
             width: 100%;
             padding: 10px 12px;
             border: 1px solid var(--border);
@@ -127,27 +127,13 @@
             transition: border-color 0.2s;
         }
 
-        select:focus, input:focus, textarea:focus {
+        input:focus, textarea:focus, select:focus {
             border-color: var(--primary);
         }
 
         textarea {
             resize: vertical;
             min-height: 90px;
-        }
-
-        .upload-box {
-            border: 2px dashed var(--border);
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            background: #f8fafc;
-            transition: background 0.2s;
-        }
-
-        .upload-box:hover {
-            background: #f1f5f9;
         }
 
         .btn {
@@ -193,7 +179,7 @@
             gap: 12px;
         }
 
-        /* 標籤頁面切換 Tabs */
+        /* 學生切換 Tabs */
         .tabs {
             display: flex;
             gap: 8px;
@@ -218,48 +204,6 @@
         .tab-btn.active {
             color: white;
             background: var(--primary);
-        }
-
-        /* 縮圖網格 */
-        .preview-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 14px;
-            justify-content: center;
-        }
-
-        .preview-item {
-            position: relative;
-            width: 100px;
-            height: 100px;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-        }
-
-        .preview-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .remove-img-btn {
-            position: absolute;
-            top: 4px;
-            right: 4px;
-            background: rgba(239, 68, 68, 0.88);
-            color: white;
-            border-radius: 50%;
-            width: 22px;
-            height: 22px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            cursor: pointer;
-            border: none;
         }
 
         /* 表格排版 */
@@ -299,25 +243,36 @@
         .page.active {
             display: block;
         }
+
+        .tip-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 18px;
+            font-size: 0.88rem;
+            color: #1e40af;
+            line-height: 1.5;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h1>學生多方輔導紀錄生成與雲端同步系統</h1>
-        <p>多位學生獨立視角轉換 ➔ 個別微調確認 ➔ 一鍵自動分類寫入 Google 試算表</p>
+        <h1>學生輔導紀錄整理與雲端同步系統</h1>
+        <p>Gemini 生成內容一鍵貼上 ➔ 自動解析多位學生視角 ➔ 確認微調 ➔ 同步 Google 試算表</p>
     </div>
 
     <!-- 步驟條 -->
     <div class="step-indicator">
         <div class="step-item active" id="stepIndicator1">
             <span class="step-num">1</span>
-            <span>輸入事件與選定學生</span>
+            <span>貼上 Gemini 產出內容</span>
         </div>
         <div class="step-item" id="stepIndicator2">
             <span class="step-num">2</span>
-            <span>檢視與微調各學生紀錄</span>
+            <span>檢視與微調個別紀錄</span>
         </div>
         <div class="step-item" id="stepIndicator3">
             <span class="step-num">3</span>
@@ -325,79 +280,62 @@
         </div>
     </div>
 
-    <!-- 第一頁：輸入事件資料 -->
+    <!-- 第一頁：貼上 AI 回覆 -->
     <div class="card page active" id="page1">
-        <h2>步驟 1：設定事件與關係人（1～4人）</h2>
-
-        <div class="form-group">
-            <label for="eventDate">輔導晤談日期</label>
-            <input type="date" id="eventDate">
+        <h2>步驟 1：貼上 Gem / Gemini 生成的輔導紀錄</h2>
+        
+        <div class="tip-box">
+            💡 <strong>貼心提示：</strong>可以直接把 Gemini 生成的整篇回覆複製貼在下方。<br>
+            系統支援標準格式（如 <code>[座號: 16] [姓名: 黃軍翔] [日期: 2026-09-16] [情況: ...] [結論: ...]</code>），也具備<strong>一般文字智慧解析</strong>功能！
         </div>
 
         <div class="form-group">
-            <label for="studentCount">涉及學生人數</label>
-            <select id="studentCount" onchange="renderStudentSelectors()">
-                <option value="1">1 人（個別學生輔導）</option>
-                <option value="2" selected>2 人（雙向互動 / 同儕衝突）</option>
-                <option value="3">3 人（多方參與群體事件）</option>
-                <option value="4">4 人（多方參與群體事件）</option>
-            </select>
+            <label for="aiRawPaste">直接在此貼上 Gemini 的回覆文字：</label>
+            <textarea id="aiRawPaste" style="min-height: 250px; font-family: monospace;" placeholder="將 Gemini 的文字複製後，直接貼在這裡..."></textarea>
         </div>
 
-        <!-- 動態學生選單槽位 -->
-        <div id="studentSelectorsContainer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;"></div>
+        <div class="btn-group" style="justify-content: flex-end;">
+            <button class="btn" onclick="parseAITextAndProceed()">🔍 解析內容並進入檢視 (下一步) ➔</button>
+        </div>
+    </div>
 
-        <!-- 多圖上傳與連續貼上 -->
-        <div class="form-group">
-            <label>相關截圖 / 便籤照片（支援多選上傳，或直接按下 Ctrl+V 貼上多張）</label>
-            <div class="upload-box" onclick="document.getElementById('fileInput').click()">
-                <span id="uploadText">點擊選取截圖（可多選），或直接按 Ctrl+V 貼上剪貼簿圖片</span>
-                <input type="file" id="fileInput" accept="image/*" multiple style="display: none;">
-                <div class="preview-grid" id="previewGrid"></div>
+    <!-- 第二頁：檢視與編輯個別學生分頁 -->
+    <div class="card page" id="page2">
+        <h2>步驟 2：檢視與微調個別學生視角紀錄</h2>
+        <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 14px;">點選學生標籤可切換不同學生的專屬紀錄：</p>
+
+        <!-- 學生分頁標籤 (Tabs) -->
+        <div class="tabs" id="parsedTabsContainer"></div>
+
+        <!-- 編輯表單 -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="form-group">
+                <label>座號與姓名</label>
+                <input type="text" id="editStudentLabel" readonly style="background:#f1f5f9; font-weight: bold;">
+            </div>
+            <div class="form-group">
+                <label>輔導日期</label>
+                <input type="date" id="editDate">
             </div>
         </div>
 
         <div class="form-group">
-            <label for="rawInput">事件簡述 / 對談重點備忘</label>
-            <textarea id="rawInput" placeholder="例如：課間因分組討論意見分歧，雙方口氣漸大並產生推擠，事後已先將兩人分開冷靜並釐清原委。"></textarea>
-        </div>
-
-        <div class="btn-group" style="justify-content: flex-end;">
-            <button class="btn" onclick="goToStep2()">生成各別紀錄並進入下一步 ➔</button>
-        </div>
-    </div>
-
-    <!-- 第二頁：檢視與個別切換 -->
-    <div class="card page" id="page2">
-        <h2>步驟 2：檢視與確認個別學生視角內容</h2>
-        <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 14px;">點擊上方標籤可切換不同學生的獨立主體視角，逐一確認或微調。</p>
-
-        <!-- 學生切換標籤 (Tabs) -->
-        <div class="tabs" id="studentTabsContainer"></div>
-
-        <!-- 編輯表單 -->
-        <div class="form-group">
-            <label>1. 輔導晤談日期</label>
-            <input type="date" id="editDate">
-        </div>
-
-        <div class="form-group">
-            <label id="situationLabel">2. 情況描述（以該生為主體視角敘述）</label>
+            <label id="situationLabel">情況描述（該生客觀視角）</label>
             <textarea id="editSituation" style="min-height: 130px;"></textarea>
         </div>
 
         <div class="form-group">
-            <label id="conclusionLabel">3. 輔導結論與後續處遇策略</label>
+            <label id="conclusionLabel">輔導結論與策略</label>
             <textarea id="editConclusion" style="min-height: 110px;"></textarea>
         </div>
 
         <div class="btn-group">
-            <button class="btn btn-secondary" onclick="goToStep(1)">⬅ 返回上一步修改</button>
-            <button class="btn btn-success" onclick="confirmAllAndGoToStep3()">確認所有學生無誤，完成歸檔 ➔</button>
+            <button class="btn btn-secondary" onclick="goToStep(1)">⬅ 返回上一步重新貼上</button>
+            <button class="btn btn-success" onclick="confirmAllAndGoToStep3()">確認內容無誤，加入總表 ➔</button>
         </div>
     </div>
 
-    <!-- 第三頁：總表與上傳 Google 試算表 -->
+    <!-- 第三頁：彙整總表與同步試算表 -->
     <div class="card page" id="page3">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
             <h2>步驟 3：全班輔導紀錄彙整表（依座號自動排序）</h2>
@@ -415,8 +353,8 @@
                         <th style="width: 85px;">學號</th>
                         <th style="width: 90px;">姓名</th>
                         <th style="width: 105px;">日期</th>
-                        <th>個人視角情況描述</th>
-                        <th>輔導結論與策略</th>
+                        <th>個人情況描述</th>
+                        <th>輔導結論與處遇</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
@@ -424,16 +362,16 @@
         </div>
 
         <div class="btn-group" style="margin-top: 24px;">
-            <button class="btn btn-secondary" onclick="startNewRecord()">➕ 建立下一筆輔導事件</button>
+            <button class="btn btn-secondary" onclick="startNewRecord()">➕ 繼續貼上下一批紀錄</button>
         </div>
     </div>
 </div>
 
 <script>
-    // 預設你的 Google Apps Script Web App 網址（已完全綁定）
+    // 你的專屬 Google Apps Script Web App 網址
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbypeuCqNeViNLLBa3sZyJs2_A6hvE-q2pgdU2x9gtnHNLLqcVUYa2Uh10nErYQK-zJ3Hw/exec";
 
-    // 40 位學生完整名冊
+    // 40 位學生完整名冊（座號、學號、姓名自動比對）
     const studentData = [
         { seat: "01", id: "355181", name: "方麒皓" },
         { seat: "02", id: "355205", name: "向廣誠" },
@@ -477,83 +415,7 @@
         { seat: "40", id: "350152", name: "鐘苡琦" }
     ];
 
-    document.getElementById('eventDate').value = new Date().toISOString().split('T')[0];
-
-    // 動態產生學生選擇選單
-    function renderStudentSelectors() {
-        const count = parseInt(document.getElementById('studentCount').value);
-        const container = document.getElementById('studentSelectorsContainer');
-        container.innerHTML = '';
-
-        for (let i = 1; i <= count; i++) {
-            const roleLabel = i === 1 ? "主案學生（主角）" : `關係學生 ${i}`;
-            const div = document.createElement('div');
-            div.className = 'form-group';
-            div.innerHTML = `
-                <label>學生 ${i}：${roleLabel}</label>
-                <select id="studentSlot_${i}">
-                    <option value="">-- 請選擇座號 --</option>
-                    ${studentData.map(s => `<option value="${s.seat}">${s.seat} 號 - ${s.name} (${s.id})</option>`).join('')}
-                </select>
-            `;
-            container.appendChild(div);
-        }
-    }
-    renderStudentSelectors();
-
-    // 處理多圖上傳與連續 Ctrl+V 貼上
-    let uploadedImages = [];
-    const fileInput = document.getElementById('fileInput');
-    const previewGrid = document.getElementById('previewGrid');
-    const uploadText = document.getElementById('uploadText');
-
-    function handleFiles(files) {
-        for (let f of files) {
-            if (f.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    uploadedImages.push(e.target.result);
-                    renderPreviews();
-                };
-                reader.readAsDataURL(f);
-            }
-        }
-    }
-
-    fileInput.addEventListener('change', e => handleFiles(e.target.files));
-
-    window.addEventListener('paste', e => {
-        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-        for (let item of items) {
-            if (item.type.indexOf('image') !== -1) {
-                handleFiles([item.getAsFile()]);
-            }
-        }
-    });
-
-    function renderPreviews() {
-        previewGrid.innerHTML = '';
-        uploadedImages.forEach((img, idx) => {
-            const item = document.createElement('div');
-            item.className = 'preview-item';
-            item.innerHTML = `
-                <img src="${img}">
-                <button class="remove-img-btn" onclick="removeImage(event, ${idx})">✕</button>
-            `;
-            previewGrid.appendChild(item);
-        });
-        uploadText.textContent = uploadedImages.length > 0 
-            ? `已載入 ${uploadedImages.length} 張圖片（可繼續新增或按 Ctrl+V 貼上）` 
-            : `點擊選取截圖（可多選），或直接按 Ctrl+V 貼上剪貼簿圖片`;
-    }
-
-    function removeImage(e, idx) {
-        e.stopPropagation();
-        uploadedImages.splice(idx, 1);
-        renderPreviews();
-    }
-
-    // 步驟與分頁控制
+    // 頁面步驟切換
     function goToStep(step) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.step-item').forEach(s => s.classList.remove('active'));
@@ -563,61 +425,94 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // 第二頁暫存的學生紀錄資料
-    let currentEditingRecords = [];
+    let parsedRecords = [];
     let currentActiveIndex = 0;
 
-    function goToStep2() {
-        const count = parseInt(document.getElementById('studentCount').value);
-        const selectedSeats = [];
-
-        for (let i = 1; i <= count; i++) {
-            const val = document.getElementById(`studentSlot_${i}`).value;
-            if (!val) {
-                alert(`請完整選擇「學生 ${i}」的座號！`);
-                return;
-            }
-            if (selectedSeats.includes(val)) {
-                alert('所選學生不能重複，請確認座號！');
-                return;
-            }
-            selectedSeats.push(val);
+    // 核心：解析貼上的文字
+    function parseAITextAndProceed() {
+        const text = document.getElementById('aiRawPaste').value.trim();
+        if (!text) {
+            alert('請先貼上 Gemini 的生成內容！');
+            return;
         }
 
-        const date = document.getElementById('eventDate').value;
-        const rawNote = document.getElementById('rawInput').value.trim();
+        parsedRecords = [];
+        const todayStr = new Date().toISOString().split('T')[0];
 
-        currentEditingRecords = selectedSeats.map((seat, index) => {
-            const info = studentData.find(s => s.seat === seat);
-            const isMain = index === 0;
-            const peerNames = selectedSeats
-                .filter((_, idx) => idx !== index)
-                .map(s => studentData.find(st => st.seat === s).name)
-                .join('、');
+        // 判斷是否使用區隔線分段，若無則整份解析
+        const blocks = text.split(/(?:---|\n={3,}\n|===)/).map(b => b.trim()).filter(b => b.length > 0);
 
-            let sit = "";
-            let con = "";
-
-            if (selectedSeats.length === 1) {
-                sit = `學生近日課堂情緒較為緊繃，主訴面臨學習壓力與生活調適困難。經個別晤談，能覺察自身壓力源，但應對策略較為有限。`;
-                con = `1. 協助釐清學習目標與時間規劃。\n2. 教導情緒調節與正向放鬆策略。\n3. 持續追蹤日常精神與課堂參與狀況。`;
-            } else if (isMain) {
-                sit = `學生${info.name}於課間活動期間，因與同學(${peerNames})發生互動分歧，情緒激動下產生爭執與衝動反應。晤談後坦承未妥善調適情緒，對事件影響具備悔意。`;
-                con = `1. 引導情緒冷靜與衝動控制，建立「停頓思考並優先通報師長」之替代行為。\n2. 練習向同儕合宜表達感受與真誠道歉修復。\n3. 持續關注後續同儕互動情形。`;
-            } else {
-                sit = `學生${info.name}於活動過程中，面對同儕(${peerNames})之言語或行為摩擦，情緒受到刺激並予以強烈回擊。主訴當下感到委屈，但亦能理解自身處理方式有待修正。`;
-                con = `1. 同理其委屈感受，釐清衝突情境中的自我保護與求助機制。\n2. 探討合宜界線建立，遭遇刺激時學習冷處理並向導師反應。\n3. 引導雙方完成正向理性溝通與和解。`;
+        blocks.forEach(block => {
+            // 抓取座號 (如：[座號: 16] 或 座號：16 或 16號)
+            let seat = "";
+            const seatMatch = block.match(/(?:座號|學生座號|號碼)[：:\s]*(\d{1,2})/i) || block.match(/(\d{1,2})\s*號/);
+            if (seatMatch) {
+                seat = seatMatch[1].padStart(2, '0');
             }
 
-            return {
-                seatNo: info.seat,
-                sid: info.id,
-                name: info.name,
-                date: date,
-                situation: sit,
-                conclusion: con
-            };
+            // 抓取姓名
+            let name = "";
+            const nameMatch = block.match(/(?:姓名|學生姓名|學生)[：:\s]*([\u4e00-\u9fa5]{2,4})/);
+            if (nameMatch) {
+                name = nameMatch[1];
+            }
+
+            // 抓取日期
+            let date = todayStr;
+            const dateMatch = block.match(/(?:日期|輔導日期|時間)[：:\s]*(\d{4}[-/年]\d{1,2}[-/月]\d{1,2}日?)/);
+            if (dateMatch) {
+                date = dateMatch[1].replace(/年|月/g, '-').replace(/日/g, '').replace(/\//g, '-');
+            }
+
+            // 抓取情況描述
+            let situation = "";
+            const sitMatch = block.match(/(?:情況|情況描述|晤談情況|事件經過)[：:\s]*([\s\S]*?)(?=(?:結論|輔導結論|處遇|策略|$))/i);
+            if (sitMatch) {
+                situation = sitMatch[1].trim();
+            }
+
+            // 抓取結論
+            let conclusion = "";
+            const conMatch = block.match(/(?:結論|輔導結論|處遇策略|後續處遇)[：:\s]*([\s\S]*?)$/i);
+            if (conMatch) {
+                conclusion = conMatch[1].trim();
+            }
+
+            // 若沒有標籤，嘗試自動從名冊比對姓名或座號
+            if (!seat && name) {
+                const found = studentData.find(s => s.name === name);
+                if (found) seat = found.seat;
+            } else if (seat && !name) {
+                const found = studentData.find(s => s.seat === seat);
+                if (found) name = found.name;
+            }
+
+            // 比對學號
+            let sid = "";
+            const studentInfo = studentData.find(s => s.seat === seat || s.name === name);
+            if (studentInfo) {
+                seat = studentInfo.seat;
+                name = studentInfo.name;
+                sid = studentInfo.id;
+            }
+
+            // 如果有解析到學生資訊或內容
+            if (seat || name || situation) {
+                parsedRecords.push({
+                    seatNo: seat || "未指定",
+                    sid: sid || "",
+                    name: name || "未指定",
+                    date: date,
+                    situation: situation || block,
+                    conclusion: conclusion || "持續關懷追蹤。"
+                });
+            }
         });
+
+        if (parsedRecords.length === 0) {
+            alert('未能辨識出學生資料，請確認格式或包含「座號/姓名、情況、結論」關鍵字！');
+            return;
+        }
 
         currentActiveIndex = 0;
         renderTabs();
@@ -627,54 +522,56 @@
 
     // 渲染第二頁 Tabs
     function renderTabs() {
-        const container = document.getElementById('studentTabsContainer');
+        const container = document.getElementById('parsedTabsContainer');
         container.innerHTML = '';
-        currentEditingRecords.forEach((r, idx) => {
+        parsedRecords.forEach((r, idx) => {
             const btn = document.createElement('button');
             btn.className = `tab-btn ${idx === currentActiveIndex ? 'active' : ''}`;
             btn.textContent = `${r.seatNo} 號 ${r.name}`;
-            btn.onclick = () => switchEditingStudent(idx);
+            btn.onclick = () => switchStudentTab(idx);
             container.appendChild(btn);
         });
     }
 
     function saveCurrentTabInputs() {
-        if (currentEditingRecords[currentActiveIndex]) {
-            currentEditingRecords[currentActiveIndex].date = document.getElementById('editDate').value;
-            currentEditingRecords[currentActiveIndex].situation = document.getElementById('editSituation').value;
-            currentEditingRecords[currentActiveIndex].conclusion = document.getElementById('editConclusion').value;
+        if (parsedRecords[currentActiveIndex]) {
+            parsedRecords[currentActiveIndex].date = document.getElementById('editDate').value;
+            parsedRecords[currentActiveIndex].situation = document.getElementById('editSituation').value;
+            parsedRecords[currentActiveIndex].conclusion = document.getElementById('editConclusion').value;
         }
     }
 
     function loadStudentIntoEditor(idx) {
-        const r = currentEditingRecords[idx];
+        const r = parsedRecords[idx];
+        document.getElementById('editStudentLabel').value = `${r.seatNo} 號 ${r.name} (${r.sid})`;
         document.getElementById('editDate').value = r.date;
         document.getElementById('editSituation').value = r.situation;
         document.getElementById('editConclusion').value = r.conclusion;
-        document.getElementById('situationLabel').textContent = `2. 情況描述（以 ${r.seatNo} 號 ${r.name} 為主體視角）`;
-        document.getElementById('conclusionLabel').textContent = `3. 輔導結論與策略（針對 ${r.name}）`;
     }
 
-    function switchEditingStudent(idx) {
+    function switchStudentTab(idx) {
         saveCurrentTabInputs();
         currentActiveIndex = idx;
         renderTabs();
         loadStudentIntoEditor(idx);
     }
 
-    // 全班累積紀錄庫
+    // 彙整紀錄庫
     let allRecords = [];
 
     function confirmAllAndGoToStep3() {
         saveCurrentTabInputs();
 
-        // 寫入總紀錄
-        currentEditingRecords.forEach(r => {
+        parsedRecords.forEach(r => {
             allRecords.push({ ...r });
         });
 
-        // 依座號由小到大排序
-        allRecords.sort((a, b) => parseInt(a.seatNo) - parseInt(b.seatNo));
+        // 依照座號由小到大排序
+        allRecords.sort((a, b) => {
+            const numA = parseInt(a.seatNo) || 999;
+            const numB = parseInt(b.seatNo) || 999;
+            return numA - numB;
+        });
 
         renderTable();
         goToStep(3);
@@ -698,9 +595,7 @@
     }
 
     function startNewRecord() {
-        document.getElementById('rawInput').value = '';
-        uploadedImages = [];
-        renderPreviews();
+        document.getElementById('aiRawPaste').value = '';
         goToStep(1);
     }
 
@@ -728,7 +623,7 @@
         document.body.removeChild(link);
     }
 
-    // 連動 Google Apps Script (直接傳送至你的專屬 Web App)
+    // 連動 Google Apps Script (直接傳送至試算表 Web App)
     function syncToGoogleSheets() {
         if (allRecords.length === 0) {
             alert('目前尚無紀錄可同步！');
@@ -740,7 +635,6 @@
         const originalText = btn.textContent;
         btn.textContent = "上傳寫入中...";
 
-        // 使用 text/plain 送出，徹底避開 CORS 阻擋
         fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
             headers: {
@@ -753,7 +647,7 @@
             if (data && data.status === "success") {
                 alert(`🎉 成功寫入 Google 試算表！共同步 ${data.count} 筆學生紀錄。`);
             } else {
-                alert(`已送出寫入請求，請至試算表確認更新。`);
+                alert(`已送出寫入請求，請前往 Google 試算表確認更新。`);
             }
             btn.disabled = false;
             btn.textContent = originalText;
