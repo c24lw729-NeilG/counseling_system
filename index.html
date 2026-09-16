@@ -50,7 +50,6 @@
             margin-top: 4px;
         }
 
-        /* 步驟指示器 */
         .step-indicator {
             display: flex;
             justify-content: center;
@@ -190,7 +189,7 @@
         }
 
         .tab-btn {
-            padding: 8px 16px;
+            padding: 9px 18px;
             border: none;
             background: #f1f5f9;
             cursor: pointer;
@@ -206,7 +205,6 @@
             background: var(--primary);
         }
 
-        /* 表格排版 */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -261,14 +259,14 @@
 <div class="container">
     <div class="header">
         <h1>學生輔導紀錄整理與雲端同步系統</h1>
-        <p>Gemini 生成內容一鍵貼上 ➔ 自動解析多位學生視角 ➔ 確認微調 ➔ 同步 Google 試算表</p>
+        <p>Gemini 生成內容一鍵貼上 ➔ 自動精準辨識多位學生 ➔ 確認微調 ➔ 一鍵同步 Google 試算表</p>
     </div>
 
     <!-- 步驟條 -->
     <div class="step-indicator">
         <div class="step-item active" id="stepIndicator1">
             <span class="step-num">1</span>
-            <span>貼上 Gemini 產出內容</span>
+            <span>貼上 Gemini 產出文字</span>
         </div>
         <div class="step-item" id="stepIndicator2">
             <span class="step-num">2</span>
@@ -280,29 +278,28 @@
         </div>
     </div>
 
-    <!-- 第一頁：貼上 AI 回覆 -->
+    <!-- 第一頁：貼上文字 -->
     <div class="card page active" id="page1">
-        <h2>步驟 1：貼上 Gem / Gemini 生成的輔導紀錄</h2>
+        <h2>步驟 1：貼上 Gem / Gemini 生成的內容</h2>
         
         <div class="tip-box">
-            💡 <strong>使用提醒：</strong>請直接把 Gemini 生成的整篇回覆文字貼在下方文字框中。<br>
-            系統會自動辨識學生座號、姓名、日期、情況與結論，並自動對應 40 位學生的完整學號！
+            💡 <strong>超強解析說明：</strong>不管是 1 位、2 位或 4 位學生，只要把 Gemini 的產出整篇複製貼在下方，系統會<strong>自動依學生名字、座號切分出每位同學的獨立區塊</strong>，不用手動加分隔線！
         </div>
 
         <div class="form-group">
-            <label for="aiRawPaste">直接在此貼上文字：</label>
-            <textarea id="aiRawPaste" style="min-height: 260px; font-family: monospace;" placeholder="請在此貼上 Gemini 產生的文字內容..."></textarea>
+            <label for="aiRawPaste">直接在此貼上 Gemini 的回覆文字：</label>
+            <textarea id="aiRawPaste" style="min-height: 280px; font-family: monospace;" placeholder="將 Gemini 生成的多位學生輔導紀錄整篇複製，貼在這邊..."></textarea>
         </div>
 
         <div class="btn-group" style="justify-content: flex-end;">
-            <button class="btn" onclick="parseAITextAndProceed()">🔍 解析內容並進入檢視 (下一步) ➔</button>
+            <button class="btn" onclick="parseAITextAndProceed()">🔍 智慧解析多人紀錄 (下一步) ➔</button>
         </div>
     </div>
 
-    <!-- 第二頁：檢視與編輯個別學生分頁 -->
+    <!-- 第二頁：個別學生切換檢視 -->
     <div class="card page" id="page2">
         <h2>步驟 2：檢視與微調個別學生視角紀錄</h2>
-        <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 14px;">點選上方按鈕可切換不同學生的專屬紀錄：</p>
+        <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 14px;">系統已為你解析出以下學生，點選標籤即可切換：</p>
 
         <!-- 學生分頁標籤 (Tabs) -->
         <div class="tabs" id="parsedTabsContainer"></div>
@@ -310,17 +307,17 @@
         <!-- 編輯表單 -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
             <div class="form-group">
-                <label>座號與姓名</label>
-                <input type="text" id="editStudentLabel" readonly style="background:#f1f5f9; font-weight: bold;">
+                <label>學生基本資料</label>
+                <input type="text" id="editStudentLabel" readonly style="background:#f1f5f9; font-weight: bold; color: #1e40af;">
             </div>
             <div class="form-group">
-                <label>輔導日期</label>
+                <label>輔導晤談日期</label>
                 <input type="date" id="editDate">
             </div>
         </div>
 
         <div class="form-group">
-            <label id="situationLabel">情況描述（該生客觀視角）</label>
+            <label id="situationLabel">情況描述（該生客觀主體視角）</label>
             <textarea id="editSituation" style="min-height: 130px;"></textarea>
         </div>
 
@@ -331,11 +328,11 @@
 
         <div class="btn-group">
             <button class="btn btn-secondary" onclick="goToStep(1)">⬅ 返回上一步重新貼上</button>
-            <button class="btn btn-success" onclick="confirmAllAndGoToStep3()">確認內容無誤，加入總表 ➔</button>
+            <button class="btn btn-success" onclick="confirmAllAndGoToStep3()">確認所有學生內容無誤，加入總表 ➔</button>
         </div>
     </div>
 
-    <!-- 第三頁：彙整總表與同步試算表 -->
+    <!-- 第三頁：總表與上傳 Google 試算表 -->
     <div class="card page" id="page3">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
             <h2>步驟 3：全班輔導紀錄彙整表（依座號自動排序）</h2>
@@ -354,7 +351,7 @@
                         <th style="width: 90px;">姓名</th>
                         <th style="width: 105px;">日期</th>
                         <th>個人情況描述</th>
-                        <th>輔導結論與處遇</th>
+                        <th>輔導結論與策略</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
@@ -368,7 +365,7 @@
 </div>
 
 <script>
-    // 已完整綁定你的 Google Apps Script Web App 網址
+    // 已綁定你的 Google Apps Script Web App
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbypeuCqNeViNLLBa3sZyJs2_A6hvE-q2pgdU2x9gtnHNLLqcVUYa2Uh10nErYQK-zJ3Hw/exec";
 
     // 40 位學生完整名冊
@@ -415,7 +412,6 @@
         { seat: "40", id: "350152", name: "鐘苡琦" }
     ];
 
-    // 頁面步驟切換
     function goToStep(step) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.step-item').forEach(s => s.classList.remove('active'));
@@ -428,82 +424,108 @@
     let parsedRecords = [];
     let currentActiveIndex = 0;
 
-    // 解析貼上的文字
+    // 升級版：智慧多人錨點分割與解析引擎
     function parseAITextAndProceed() {
-        const text = document.getElementById('aiRawPaste').value.trim();
-        if (!text) {
-            alert('請先貼上生成內容！');
+        const fullText = document.getElementById('aiRawPaste').value.trim();
+        if (!fullText) {
+            alert('請先貼上 Gemini 的生成內容！');
             return;
         }
 
         parsedRecords = [];
         const todayStr = new Date().toISOString().split('T')[0];
 
-        // 判斷是否使用區隔線分段
-        const blocks = text.split(/(?:---|\n={3,}\n|===)/).map(b => b.trim()).filter(b => b.length > 0);
+        // 步驟 A：智慧找出所有出現的「學生分割錨點」
+        // 搜尋模式包含：
+        // 1. [座號: 16] 或 座號: 16
+        // 2. 學生一、學生 1、學生：黃軍翔
+        // 3. 直接出現 40 位學生名冊的姓名
+        const splitRegex = /(?=(?:\[?(?:座號|學生|學生[一二三四1234]|關係人|個案)[：:\s]*\d{1,2}|【學生|###\s*(?:學生|\d{1,2}|[\u4e00-\u9fa5]{2,4})|(?:\n|^)(?:0[1-9]|[1-3][0-9]|40)\s*號|(?:\n|^)(?:方麒皓|向廣誠|何子昂|吳明洧|呂彥炘|李文瑜|李宥叡|林承駿|林恩廷|翁睿宏|張昱緯|張鈞淳|陳昱安|曾宇謙|游昀軒|黃軍翔|楊沂濬|鄔千富|鄭旭宸|盧毅愷|蕭胤丞|關登元|王盈喬|王語樂|江俞蓁|呂宜潔|呂庭綸|李妍蓁|林宜臻|洪萱嬅|張明希|莊以喬|曾羽婕|曾靖雅|盧沛妤|謝妤晨|謝雨彤|簡予馨|羅品雯|鐘苡琦)[：:\s\n]))/g;
 
-        blocks.forEach(block => {
+        let rawBlocks = fullText.split(splitRegex).map(b => b.trim()).filter(b => b.length > 10);
+
+        // 如果上述正則沒有切開，但有明確的分隔線符號，則使用分隔線
+        if (rawBlocks.length <= 1) {
+            rawBlocks = fullText.split(/(?:---|\n={3,}\n|===|\*{3,})/).map(b => b.trim()).filter(b => b.length > 10);
+        }
+
+        rawBlocks.forEach(block => {
             let seat = "";
-            const seatMatch = block.match(/(?:座號|學生座號|號碼)[：:\s]*(\d{1,2})/i) || block.match(/(\d{1,2})\s*號/);
-            if (seatMatch) {
-                seat = seatMatch[1].padStart(2, '0');
-            }
-
             let name = "";
-            const nameMatch = block.match(/(?:姓名|學生姓名|學生)[：:\s]*([\u4e00-\u9fa5]{2,4})/);
-            if (nameMatch) {
-                name = nameMatch[1];
+            let sid = "";
+
+            // 1. 優先從文中比對 40 位名冊的姓名
+            for (let s of studentData) {
+                if (block.includes(s.name)) {
+                    name = s.name;
+                    seat = s.seat;
+                    sid = s.id;
+                    break;
+                }
             }
 
+            // 2. 如果沒對到名字，嘗試抓取座號數字
+            if (!seat) {
+                const seatMatch = block.match(/(?:座號|號碼)[：:\s]*(\d{1,2})/i) || block.match(/(\d{1,2})\s*號/);
+                if (seatMatch) {
+                    seat = seatMatch[1].padStart(2, '0');
+                    const found = studentData.find(s => s.seat === seat);
+                    if (found) {
+                        name = found.name;
+                        sid = found.id;
+                    }
+                }
+            }
+
+            // 3. 抓取日期
             let date = todayStr;
-            const dateMatch = block.match(/(?:日期|輔導日期|時間)[：:\s]*(\d{4}[-/年]\d{1,2}[-/月]\d{1,2}日?)/);
+            const dateMatch = block.match(/(?:日期|輔導日期|晤談日期|時間)[：:\s]*(\d{4}[-/年]\d{1,2}[-/月]\d{1,2}日?)/);
             if (dateMatch) {
                 date = dateMatch[1].replace(/年|月/g, '-').replace(/日/g, '').replace(/\//g, '-');
             }
 
+            // 4. 抓取「情況描述」
             let situation = "";
-            const sitMatch = block.match(/(?:情況|情況描述|晤談情況|事件經過)[：:\s]*([\s\S]*?)(?=(?:結論|輔導結論|處遇|策略|$))/i);
+            const sitMatch = block.match(/(?:情況|情況描述|晤談情況|事件經過|問題描述)[：:\s]*([\s\S]*?)(?=(?:結論|輔導結論|後續處遇|處遇策略|3\.|三、|$))/i);
             if (sitMatch) {
                 situation = sitMatch[1].trim();
             }
 
+            // 5. 抓取「結論與策略」
             let conclusion = "";
-            const conMatch = block.match(/(?:結論|輔導結論|處遇策略|後續處遇)[：:\s]*([\s\S]*?)$/i);
+            const conMatch = block.match(/(?:結論|輔導結論|後續處遇|處遇策略|處遇與輔導|後續追蹤)[：:\s]*([\s\S]*?)$/i);
             if (conMatch) {
                 conclusion = conMatch[1].trim();
             }
 
-            // 比對學生名冊
-            if (!seat && name) {
-                const found = studentData.find(s => s.name === name);
-                if (found) seat = found.seat;
-            } else if (seat && !name) {
-                const found = studentData.find(s => s.seat === seat);
-                if (found) name = found.name;
+            // 如果正則抓不到獨立標籤，但整塊有內容，則智慧保留
+            if (!situation && block.length > 20) {
+                situation = block;
+                conclusion = "持續關懷追蹤與親師合作引導。";
             }
 
-            let sid = "";
-            const studentInfo = studentData.find(s => s.seat === seat || s.name === name);
-            if (studentInfo) {
-                seat = studentInfo.seat;
-                name = studentInfo.name;
-                sid = studentInfo.id;
-            }
-
-            if (seat || name || situation) {
+            // 只要找到學生或有實質內容就收錄
+            if (name || seat || situation) {
                 parsedRecords.push({
                     seatNo: seat || "未指定",
                     sid: sid || "",
-                    name: name || "未指定",
+                    name: name || "學生",
                     date: date,
-                    situation: situation || block,
-                    conclusion: conclusion || "持續追蹤觀察與個別輔導。"
+                    situation: situation || "無情況內容",
+                    conclusion: conclusion || "持續追蹤。"
                 });
             }
         });
 
+        // 移除可能因為切塊產生的空項目或重複項
+        parsedRecords = parsedRecords.filter((item, index, self) => 
+            index === self.findIndex((t) => (
+                t.seatNo !== "未指定" && t.seatNo === item.seatNo
+            )) || item.seatNo === "未指定"
+        );
+
         if (parsedRecords.length === 0) {
-            alert('未能辨識出學生資料，請確認內容中包含「座號/姓名、情況、結論」關鍵字！');
+            alert('未能辨識出學生資料，請確認內容中是否包含學生的座號或姓名！');
             return;
         }
 
@@ -513,7 +535,6 @@
         goToStep(2);
     }
 
-    // 渲染第二頁 Tabs
     function renderTabs() {
         const container = document.getElementById('parsedTabsContainer');
         container.innerHTML = '';
@@ -549,7 +570,6 @@
         loadStudentIntoEditor(idx);
     }
 
-    // 彙整紀錄庫
     let allRecords = [];
 
     function confirmAllAndGoToStep3() {
@@ -559,7 +579,7 @@
             allRecords.push({ ...r });
         });
 
-        // 依照座號由小到大排序
+        // 依座號由小到大排序
         allRecords.sort((a, b) => {
             const numA = parseInt(a.seatNo) || 999;
             const numB = parseInt(b.seatNo) || 999;
@@ -592,7 +612,6 @@
         goToStep(1);
     }
 
-    // 匯出 CSV 檔
     function exportToCSV() {
         if (allRecords.length === 0) {
             alert('目前尚無紀錄可匯出！');
@@ -616,7 +635,6 @@
         document.body.removeChild(link);
     }
 
-    // 連動 Google Apps Script 傳送至試算表
     function syncToGoogleSheets() {
         if (allRecords.length === 0) {
             alert('目前尚無紀錄可同步！');
@@ -640,7 +658,7 @@
             if (data && data.status === "success") {
                 alert(`🎉 成功寫入 Google 試算表！共同步 ${data.count} 筆學生紀錄。`);
             } else {
-                alert(`已發出寫入請求，請至 Google 試算表確認更新。`);
+                alert(`已送出寫入請求，請前往 Google 試算表確認更新。`);
             }
             btn.disabled = false;
             btn.textContent = originalText;
