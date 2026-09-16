@@ -970,34 +970,44 @@
     }
 
     // 10. Google Apps Script 雲端試算表 Web App 串接接口
-    function syncWithGoogleSheet() {
-        if (storedRecords.length === 0) {
-            alert('目前總表中尚無紀錄可同步！');
+    function syncToGoogleSheets() {
+        if (allRecords.length === 0) {
+            alert('目前尚無紀錄可同步！');
             return;
         }
 
+        // 請確認這裡是你自己的 GAS 部署網址（結尾必須是 /exec，不能是 /dev）
         const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbypeuCqNeViNLLBa3sZyJs2_A6hvE-q2pgdU2x9gtnHNLLqcVUYa2Uh10nErYQK-zJ3Hw/exec";
 
-        if (GOOGLE_SCRIPT_URL === "https://script.google.com/macros/s/AKfycbypeuCqNeViNLLBa3sZyJs2_A6hvE-q2pgdU2x9gtnHNLLqcVUYa2Uh10nErYQK-zJ3Hw/exec") {
-            alert(
-                "【Google 試算表自動同步設定說明】\n\n" +
-                "1. 請開啟您的 Google 試算表，點選「擴充功能」➔「Apps Script」。\n" +
-                "2. 貼入自動分頁建立腳本並部署為「網頁應用程式 (Web App)」。\n" +
-                "3. 將產生的 Web App 網址貼入本程式碼的 GOOGLE_SCRIPT_URL 變數中。\n\n" +
-                "💡 目前建議您直接點擊「匯出 CSV 檔」，即可直接在 Google 試算表「檔案 ➔ 匯入」整份紀錄！"
-            );
-            return;
-        }
+        const btn = event.target;
+        btn.disabled = true;
+        const originalText = btn.textContent;
+        btn.textContent = "傳送中...";
 
+        // 關鍵修改：使用 text/plain 送出 JSON 字串，完全避開 CORS 阻擋
         fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(storedRecords)
-        }).then(() => {
-            alert('資料已成功送出至 Google 試算表！');
-        }).catch(err => {
-            alert('同步至 Google 試算表失敗：' + err);
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8'
+            },
+            body: JSON.stringify(allRecords)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success") {
+                alert(`🎉 成功寫入 Google 試算表！共 ${data.count} 筆資料。`);
+            } else {
+                alert(`寫入試算表失敗：${data.message}`);
+            }
+            btn.disabled = false;
+            btn.textContent = originalText;
+        })
+        .catch(err => {
+            // 如果因為瀏覽器同源策略沒拿到回應，但實際上可能已寫入成功
+            console.log(err);
+            alert('已發出傳送請求！請檢查 Google 試算表是否有新增資料。');
+            btn.disabled = false;
+            btn.textContent = originalText;
         });
     }
 </script>
