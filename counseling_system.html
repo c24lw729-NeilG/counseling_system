@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>學生事件輔導紀錄多向生成與彙整系統</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --secondary: #64748b;
+            --secondary-hover: #475569;
+            --success: #16a34a;
+            --success-hover: #15803d;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-sub: #475569;
+            --border: #cbd5e1;
+            --focus-ring: rgba(37, 99, 235, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans TC", sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            padding: 24px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1040px;
+        }
+
+        /* 頂部導航指示條 */
+        .step-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            margin-bottom: 28px;
+        }
+
+        .step-nav::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background: #e2e8f0;
+            z-index: 1;
+            transform: translateY(-50%);
+        }
+
+        .step-item {
+            position: relative;
+            z-index: 2;
+            background: var(--bg);
+            padding: 0 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .step-bubble {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .step-item.active .step-bubble {
+            background: var(--primary);
+            color: #ffffff;
+            box-shadow: 0 0 0 4px var(--focus-ring);
+        }
+
+        .step-item.completed .step-bubble {
+            background: var(--success);
+            color: #ffffff;
+        }
+
+        .step-label {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            font-weight: 600;
+        }
+
+        .step-item.active .step-label {
+            color: var(--primary);
+        }
+
+        /* 卡片版面 */
+        .page-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 32px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            display: none;
+        }
+
+        .page-card.active {
+            display: block;
+            animation: fadeIn 0.25s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-title {
+            font-size: 1.35rem;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .page-title::before {
+            content: '';
+            display: inline-block;
+            width: 5px;
+            height: 1.25rem;
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        .page-desc {
+            color: var(--text-sub);
+            font-size: 0.92rem;
+            margin-bottom: 24px;
+        }
+
+        /* 表單元素 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.88rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #334155;
+        }
+
+        select, input[type="text"], input[type="date"], textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+            background-color: #ffffff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        select:focus, input:focus, textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--focus-ring);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            line-height: 1.5;
+        }
+
+        /* 學生動態選擇卡片 */
+        .student-slots {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .slot-card {
+            border: 1px solid var(--border);
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        .slot-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .slot-role {
+            background: #e2e8f0;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #475569;
+            font-size: 0.75rem;
+        }
+
+        /* 多圖片上傳區與縮圖網格 */
+        .upload-box {
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            padding: 24px 16px;
+            text-align: center;
+            cursor: pointer;
+            background: #f8fafc;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .upload-box:hover {
+            background: #f1f5f9;
+            border-color: var(--primary);
+        }
+
+        .upload-icon {
+            font-size: 2rem;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .upload-tip {
+            font-size: 0.92rem;
+            color: #475569;
+            font-weight: 600;
+        }
+
+        .upload-subtip {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+            text-align: left;
+        }
+
+        .preview-thumb-wrap {
+            position: relative;
+            width: 100%;
+            padding-top: 100%; /* 1:1 正方形 */
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: #e2e8f0;
+        }
+
+        .preview-thumb-wrap img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .remove-img-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 22px;
+            height: 22px;
+            background: rgba(239, 68, 68, 0.9);
+            color: #ffffff;
+            border: none;
+            border-radius: 50%;
+            font-size: 13px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .remove-img-btn:hover {
+            background: var(--danger-hover);
+            transform: scale(1.1);
+        }
+
+        /* 按鈕組與操作列 */
+        .btn-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 28px;
+            padding-top: 18px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn:active {
+            transform: scale(0.99);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--secondary-hover);
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-success:hover {
+            background: var(--success-hover);
+        }
+
+        /* 第二頁：學生切換標籤 (Tabs) */
+        .student-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 4px;
+            overflow-x: auto;
+        }
+
+        .tab-button {
+            padding: 10px 20px;
+            border: none;
+            background: #f1f5f9;
+            color: #64748b;
+            font-size: 0.92rem;
+            font-weight: 600;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .tab-button.active {
+            background: var(--primary);
+            color: #ffffff;
+        }
+
+        /* 彙整表與分頁 */
+        .table-responsive {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+            text-align: left;
+            background: white;
+        }
+
+        th, td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #334155;
+            font-weight: 700;
+        }
+
+        .badge-seat {
+            background: #e0f2fe;
+            color: #0369a1;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- 頂部步驟條導航 -->
+    <div class="step-nav">
+        <div class="step-item active" id="navStep1">
+            <div class="step-bubble">1</div>
+            <span class="step-label">資料與多圖輸入</span>
+        </div>
+        <div class="step-item" id="navStep2">
+            <div class="step-bubble">2</div>
+            <span class="step-label">多方視角檢視與微調</span>
+        </div>
+        <div class="step-item" id="navStep3">
+            <div class="step-bubble">3</div>
+            <span class="step-label">全班總表與匯出</span>
+        </div>
+    </div>
+
+    <!-- ======================= 第一頁：資料輸入與多圖上傳 ======================= -->
+    <div class="page-card active" id="page1">
+        <h2 class="page-title">步驟 1：輸入事件基本資料、選取學生與多張截圖</h2>
+        <p class="page-desc">選擇參與學生人數（最多 4 人），支援上傳多張便籤或對談截圖，系統將自動為每位學生生成專屬的主體視角紀錄。</p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+                <label for="eventDate">事件發生 / 輔導晤談日期</label>
+                <input type="date" id="eventDate">
+            </div>
+
+            <div class="form-group">
+                <label for="studentCountSelect">涉入學生人數</label>
+                <select id="studentCountSelect" onchange="updateStudentSlots()">
+                    <option value="1">1 位學生（個人晤談/輔導）</option>
+                    <option value="2" selected>2 位學生（雙向互動/同儕衝突）</option>
+                    <option value="3">3 位學生（三人同儕/團體事件）</option>
+                    <option value="4">4 位學生（多方群體/現場通報事件）</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 學生槽位區 (動態呈現 1~4) -->
+        <label>選取關係學生座號（系統自動鎖定學號與姓名）</label>
+        <div class="student-slots" id="studentSlotsContainer">
+            <!-- 動態注入 slot -->
+        </div>
+
+        <!-- 多圖上傳與連續貼上區塊 -->
+        <div class="form-group">
+            <label>對談截圖 / 便籤拍照（支援多檔案選取，或直接按 Ctrl+V 連續貼上圖片）</label>
+            <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+                <span class="upload-icon">📷</span>
+                <span class="upload-tip" id="uploadHint">點擊選取多張圖片，或在此處連續按 Ctrl + V 貼上截圖</span>
+                <div class="upload-subtip">支援 PNG, JPG, JPEG 等格式，無張數上限</div>
+                <input type="file" id="fileInput" accept="image/*" multiple style="display:none;" onchange="handleFileSelect(this.files)">
+            </div>
+            
+            <!-- 縮圖列表與刪除管理網格 -->
+            <div class="preview-grid" id="previewGrid"></div>
+        </div>
+
+        <!-- 事件草稿文字 -->
+        <div class="form-group">
+            <label for="rawNotes">事件簡述 / 重點備忘（文字或語音辨識內容）</label>
+            <textarea id="rawNotes" placeholder="例如：課間分組討論發生意見衝突，A 拿筆劃到 B 的講義，B 推了 A 一把，C 在旁勸阻被波及，D 則向班長報告引發秩序混亂..."></textarea>
+        </div>
+
+        <!-- 第一頁控制列 -->
+        <div class="btn-group">
+            <button class="btn btn-secondary" onclick="navigateToPage(3)">檢視全班彙整總表</button>
+            <button class="btn" onclick="processToStep2()">下一步：生成並檢視各學生輔導紀錄 ➔</button>
+        </div>
+    </div>
+
+    <!-- ======================= 第二頁：檢視與微調 (Tabs) ======================= -->
+    <div class="page-card" id="page2">
+        <h2 class="page-title">步驟 2：檢視與編輯各學生主體視角紀錄</h2>
+        <p class="page-desc">系統已依據每位學生的參與角色分別轉換人稱與輔導主軸。請點擊上方分頁切換學生，逐一確認或微調。</p>
+
+        <!-- 學生分頁切換按鈕區 -->
+        <div class="student-tabs" id="studentTabsHeader">
+            <!-- 動態生成 Tab Button -->
+        </div>
+
+        <!-- 編輯表單容器 -->
+        <div id="studentFormContent">
+            <div class="form-group">
+                <label>1. 輔導晤談日期</label>
+                <input type="date" id="currentEditDate">
+            </div>
+
+            <div class="form-group">
+                <label id="currentSituationLabel">2. 情況描述（個人主體視角）</label>
+                <textarea id="currentEditSituation" style="min-height: 120px;" placeholder="情況描述文字..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label id="currentConclusionLabel">3. 輔導結論與策略（該生專屬輔導處遇）</label>
+                <textarea id="currentEditConclusion" style="min-height: 100px;" placeholder="輔導處遇與策略..."></textarea>
+            </div>
+        </div>
+
+        <!-- 第二頁控制列 -->
+        <div class="btn-group">
+            <button class="btn btn-secondary" onclick="navigateToPage(1)">⬅ 返回上一步修改</button>
+            <button class="btn btn-success" onclick="saveAllGeneratedRecords()">確認無誤，送出儲存至總表 ➔</button>
+        </div>
+    </div>
+
+    <!-- ======================= 第三頁：總表彙整與匯出 ======================= -->
+    <div class="page-card" id="page3">
+        <h2 class="page-title">步驟 3：全班輔導紀錄總表</h2>
+        <p class="page-desc">所有紀錄已依座號由小到大自動排序歸納。可下載 CSV 檔案匯入 Google 試算表，或透過 Web App 進行雲端同步。</p>
+
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;">
+            <button class="btn btn-secondary" onclick="exportCSV()">匯出 CSV 檔 (相容 Google 試算表 / Excel)</button>
+            <button class="btn" onclick="syncWithGoogleSheet()">同步至 Google 試算表</button>
+            <button class="btn btn-secondary" onclick="navigateToPage(1)" style="margin-left: auto;">新增另一筆輔導紀錄</button>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 70px;">座號</th>
+                        <th style="width: 80px;">學號</th>
+                        <th style="width: 90px;">姓名</th>
+                        <th style="width: 100px;">日期</th>
+                        <th>情況描述</th>
+                        <th>輔導結論與處遇策略</th>
+                    </tr>
+                </thead>
+                <tbody id="recordsTbody">
+                    <!-- 動態注入表格資料 -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn btn-secondary" onclick="navigateToPage(1)">返回輸入頁面</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // 1. 全班 40 位學生完整名冊
+    const CLASS_STUDENTS = [
+        { seat: "01", id: "355181", name: "方麒皓" },
+        { seat: "02", id: "355205", name: "向廣誠" },
+        { seat: "03", id: "355246", name: "何子昂" },
+        { seat: "04", id: "355183", name: "吳明洧" },
+        { seat: "05", id: "355270", name: "呂彥炘" },
+        { seat: "06", id: "355250", name: "李文瑜" },
+        { seat: "07", id: "355252", name: "李宥叡" },
+        { seat: "08", id: "355143", name: "林承駿" },
+        { seat: "09", id: "355069", name: "林恩廷" },
+        { seat: "10", id: "355187", name: "翁睿宏" },
+        { seat: "11", id: "355218", name: "張昱緯" },
+        { seat: "12", id: "355123", name: "張鈞淳" },
+        { seat: "13", id: "355126", name: "陳昱安" },
+        { seat: "14", id: "355242", name: "曾宇謙" },
+        { seat: "15", id: "355036", name: "游昀軒" },
+        { seat: "16", id: "355080", name: "黃軍翔" },
+        { seat: "17", id: "355174", name: "楊沂濬" },
+        { seat: "18", id: "355085", name: "鄔千富" },
+        { seat: "19", id: "355086", name: "鄭旭宸" },
+        { seat: "20", id: "355202", name: "盧毅愷" },
+        { seat: "21", id: "355177", name: "蕭胤丞" },
+        { seat: "22", id: "355224", name: "關登元" },
+        { seat: "23", id: "350136", name: "王盈喬" },
+        { seat: "24", id: "350118", name: "王語樂" },
+        { seat: "25", id: "350065", name: "江俞蓁" },
+        { seat: "26", id: "350034", name: "呂宜潔" },
+        { seat: "27", id: "350085", name: "呂庭綸" },
+        { seat: "28", id: "350035", name: "李妍蓁" },
+        { seat: "29", id: "350052", name: "林宜臻" },
+        { seat: "30", id: "350155", name: "洪萱嬅" },
+        { seat: "31", id: "350179", name: "張明希" },
+        { seat: "32", id: "350181", name: "莊以喬" },
+        { seat: "33", id: "350164", name: "曾羽婕" },
+        { seat: "34", id: "350146", name: "曾靖雅" },
+        { seat: "35", id: "350168", name: "盧沛妤" },
+        { seat: "36", id: "350115", name: "謝妤晨" },
+        { seat: "37", id: "350169", name: "謝雨彤" },
+        { seat: "38", id: "350170", name: "簡予馨" },
+        { seat: "39", id: "350116", name: "羅品雯" },
+        { seat: "40", id: "350152", name: "鐘苡琦" }
+    ];
+
+    // 全域變數
+    let uploadedImages = []; // 存放所有已上傳的圖片 Base64 清單
+    let storedRecords = [];  // 總表已儲存的紀錄
+    let activeEditingList = []; // 當前編輯中的多學生暫存陣列 (1~4人)
+    let currentTabIndex = 0; // 目前選中的 Tab 學生索引 (0~3)
+
+    // 初始化設定
+    document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById('eventDate').value = new Date().toISOString().split('T')[0];
+        updateStudentSlots();
+    });
+
+    // 2. 步驟導航切換
+    function navigateToPage(pageNum) {
+        [1, 2, 3].forEach(i => {
+            const pageCard = document.getElementById(`page${i}`);
+            const navStep = document.getElementById(`navStep${i}`);
+            if (i === pageNum) {
+                pageCard.classList.add('active');
+                navStep.classList.add('active');
+            } else {
+                pageCard.classList.remove('active');
+                navStep.classList.remove('active');
+                if (i < pageNum) navStep.classList.add('completed');
+                else navStep.classList.remove('completed');
+            }
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 3. 學生槽位動態生成
+    function updateStudentSlots() {
+        const count = parseInt(document.getElementById('studentCountSelect').value);
+        const container = document.getElementById('studentSlotsContainer');
+        container.innerHTML = '';
+
+        const roleTitles = [
+            "主角 A (主要當事人)",
+            "關係人 B (次要當事人)",
+            "同行者/波及者 C",
+            "在場/通報者 D"
+        ];
+
+        for (let i = 0; i < count; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'slot-card';
+            slot.innerHTML = `
+                <div class="slot-header">
+                    <span>學生 ${i + 1}</span>
+                    <span class="slot-role">${roleTitles[i]}</span>
+                </div>
+                <select id="slotSelect_${i}" onchange="validateDuplicateStudent(${i})">
+                    <option value="">-- 請選擇座號 --</option>
+                    ${CLASS_STUDENTS.map(s => `<option value="${s.seat}">${s.seat} 號 - ${s.name} (${s.id})</option>`).join('')}
+                </select>
+                <div style="font-size:0.8rem; color:#64748b; margin-top:6px;" id="slotNameDisplay_${i}">
+                    未選擇
+                </div>
+            `;
+            container.appendChild(slot);
+        }
+    }
+
+    // 防重複選取檢查
+    function validateDuplicateStudent(currentIndex) {
+        const selects = document.querySelectorAll('[id^="slotSelect_"]');
+        const currentVal = selects[currentIndex].value;
+        const nameDisplay = document.getElementById(`slotNameDisplay_${currentIndex}`);
+
+        if (currentVal) {
+            const s = CLASS_STUDENTS.find(item => item.seat === currentVal);
+            nameDisplay.textContent = `姓名：${s.name} | 學號：${s.id}`;
+        } else {
+            nameDisplay.textContent = '未選擇';
+            return;
+        }
+
+        for (let i = 0; i < selects.length; i++) {
+            if (i !== currentIndex && selects[i].value === currentVal) {
+                alert(`座號 ${currentVal} 已經被選取過了，請勿重複選擇同一位學生！`);
+                selects[currentIndex].value = "";
+                nameDisplay.textContent = '未選擇';
+                break;
+            }
+        }
+    }
+
+    // 4. 多圖片上傳與連續貼上管理機制
+    function handleFileSelect(files) {
+        if (!files || files.length === 0) return;
+        Array.from(files).forEach(file => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    uploadedImages.push(e.target.result);
+                    renderImagePreviews();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        document.getElementById('fileInput').value = ''; // 清空以利重複選取相同檔名
+    }
+
+    // 支援直接按 Ctrl+V 貼上截圖（可連續貼上）
+    window.addEventListener('paste', (e) => {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        let foundImage = false;
+        for (let item of items) {
+            if (item.type.indexOf('image') !== -1) {
+                foundImage = true;
+                const blob = item.getAsFile();
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    uploadedImages.push(evt.target.result);
+                    renderImagePreviews();
+                };
+                reader.readAsDataURL(blob);
+            }
+        }
+    });
+
+    // 渲染圖片縮圖與刪除按鈕
+    function renderImagePreviews() {
+        const grid = document.getElementById('previewGrid');
+        grid.innerHTML = '';
+
+        uploadedImages.forEach((imgSrc, idx) => {
+            const thumbWrap = document.createElement('div');
+            thumbWrap.className = 'preview-thumb-wrap';
+            thumbWrap.innerHTML = `
+                <img src="${imgSrc}" alt="截圖預覽 ${idx + 1}">
+                <button type="button" class="remove-img-btn" onclick="removeImage(event, ${idx})" title="刪除此圖片">✕</button>
+            `;
+            grid.appendChild(thumbWrap);
+        });
+
+        const hint = document.getElementById('uploadHint');
+        if (uploadedImages.length > 0) {
+            hint.textContent = `已載入 ${uploadedImages.length} 張截圖照片（可繼續點擊選取或按 Ctrl+V 貼上）`;
+        } else {
+            hint.textContent = "點擊選取多張圖片，或在此處連續按 Ctrl + V 貼上截圖";
+        }
+    }
+
+    // 個別刪除圖片
+    function removeImage(e, index) {
+        e.stopPropagation();
+        uploadedImages.splice(index, 1);
+        renderImagePreviews();
+    }
+
+    // 5. 前往步驟 2：核心視角生成
+    function processToStep2() {
+        const count = parseInt(document.getElementById('studentCountSelect').value);
+        const selectedSeats = [];
+
+        for (let i = 0; i < count; i++) {
+            const val = document.getElementById(`slotSelect_${i}`).value;
+            if (!val) {
+                alert(`請先為「學生 ${i + 1}」選取座號！`);
+                return;
+            }
+            selectedSeats.push(val);
+        }
+
+        const date = document.getElementById('eventDate').value;
+        const rawText = document.getElementById('rawNotes').value.trim();
+        const hasImages = uploadedImages.length > 0;
+
+        if (!rawText && !hasImages) {
+            alert('請提供事件簡述文字或上傳截圖照片，以便系統能為各方生成分析紀錄！');
+            return;
+        }
+
+        const selectedStudents = selectedSeats.map(seat => CLASS_STUDENTS.find(s => s.seat === seat));
+
+        // 依據角色人數生成客製化視角內容
+        activeEditingList = generatePerspectiveRecords(selectedStudents, date, rawText);
+
+        renderTabs();
+        currentTabIndex = 0;
+        loadStudentToForm(0);
+
+        navigateToPage(2);
+    }
+
+    // 多方視角文本生成引擎
+    function generatePerspectiveRecords(students, date, raw) {
+        const count = students.length;
+        const list = [];
+
+        students.forEach((stu, idx) => {
+            let situation = "";
+            let conclusion = "";
+
+            if (count === 1) {
+                situation = `${stu.name}近日於校園學習與情緒狀態稍顯緊繃，主訴面臨課業進度與生活作息調適壓力。個別晤談過程中，學生態度坦誠，能覺察引發焦慮之情境，但缺乏系統性放鬆與因應策略。`;
+                conclusion = `1. 協助${stu.name}梳理時間管理計畫，將任務拆解為短期可落實步驟。\n2. 教導漸進式腹式呼吸放鬆法，緩解緊繃焦慮情緒。\n3. 排定下週同時間追蹤執行成效，適時給予正向增強。`;
+            } else if (count === 2) {
+                const other = students[idx === 0 ? 1 : 0];
+                if (idx === 0) {
+                    situation = `學生${stu.name}於課堂活動期間，因與同學(${other.name})溝通互動產生摩擦，情緒衝動之下產生過當言行。經個別晤談，${stu.name}能反思事發當下未能克制激動情緒，對自身失當舉動造成同儕影響深感抱歉。`;
+                    conclusion = `1. 引導${stu.name}建立情緒覺察與衝動暫停機制，落實「先離場冷靜、尋求師長協助」之行為模式。\n2. 陪同演練合宜的人際溝通語氣與道歉修復對話技巧。\n3. 持續追蹤日常同儕互動氛圍。`;
+                } else {
+                    situation = `學生${stu.name}於活動期間遭遇同儕(${other.name})過當行為刺激，情緒受到衝擊並引發強烈防衛反應。晤談時${stu.name}表達委屈與不適，但在引導下亦能客觀梳理事件全貌，理解雙方皆有冷靜溝通之空間。`;
+                    conclusion = `1. 充分傾聽並同理${stu.name}之委屈感受，強化其遭受冒犯時之自我保護意識。\n2. 建立正向求助觀念，遭遇不適刺激時優先通報師長，避免直接起衝突。\n3. 協助雙方建立互動界線共識，完成相互理解與和解。`;
+                }
+            } else {
+                const peers = students.filter(s => s.seat !== stu.seat).map(s => s.name).join("、");
+                if (idx === 0) {
+                    situation = `學生${stu.name}於同儕互動群體(${peers})中因意見分歧擔任事件主要發起方，情緒處於亢奮激動狀態，導致群體秩序失衡。晤談中${stu.name}能逐步平復心緒並承認當下欠缺大局考量。`;
+                    conclusion = `1. 進行衝動控制與同理心訓練，引導其思考個人舉動對整體的後續連鎖影響。\n2. 建立建設性溝通管道，練習尊重多元意見。\n3. 排定後續追蹤。`;
+                } else if (idx === 1) {
+                    situation = `學生${stu.name}在面對同儕(${students[0].name})強勢舉動時，情緒受牽動加入爭執。晤談時該生自述原意為堅持個人立場，但後續情緒失控升級為相互對立。`;
+                    conclusion = `1. 引導${stu.name}學習冷靜抽離機制，敏銳辨識衝突臨界點。\n2. 演練適當之堅定拒絕與求助話術。\n3. 促進與同儕之和平對話與修復。`;
+                } else {
+                    situation = `學生${stu.name}處於同儕事件情境現場，因旁觀或同伴起鬨而身處其中，主訴當下感到混亂與不知所措。晤談觀察其具備是非辨別能力，但群體抗壓性較弱。`;
+                    conclusion = `1. 肯定${stu.name}主動澄清事實之誠實態度，強化旁觀者正向干預或安全通報意識。\n2. 引導建立人際獨立判斷力，避免盲從群體情緒。\n3. 給予心理支持並解除其焦慮壓力。`;
+                }
+            }
+
+            list.push({
+                seatNo: stu.seat,
+                sid: stu.id,
+                name: stu.name,
+                date: date,
+                situation: situation,
+                conclusion: conclusion
+            });
+        });
+
+        return list;
+    }
+
+    // 6. 第二頁 Tabs 渲染與切換
+    function renderTabs() {
+        const header = document.getElementById('studentTabsHeader');
+        header.innerHTML = '';
+
+        activeEditingList.forEach((stu, index) => {
+            const btn = document.createElement('button');
+            btn.className = `tab-button ${index === currentTabIndex ? 'active' : ''}`;
+            btn.innerHTML = `<span>${stu.seat} 號 ${stu.name}</span>`;
+            btn.onclick = () => switchStudentTab(index);
+            header.appendChild(btn);
+        });
+    }
+
+    function switchStudentTab(index) {
+        saveCurrentFormToActiveList();
+        currentTabIndex = index;
+        renderTabs();
+        loadStudentToForm(index);
+    }
+
+    function saveCurrentFormToActiveList() {
+        if (!activeEditingList[currentTabIndex]) return;
+        activeEditingList[currentTabIndex].date = document.getElementById('currentEditDate').value;
+        activeEditingList[currentTabIndex].situation = document.getElementById('currentEditSituation').value;
+        activeEditingList[currentTabIndex].conclusion = document.getElementById('currentEditConclusion').value;
+    }
+
+    function loadStudentToForm(index) {
+        const target = activeEditingList[index];
+        document.getElementById('currentEditDate').value = target.date;
+        document.getElementById('currentEditSituation').value = target.situation;
+        document.getElementById('currentEditConclusion').value = target.conclusion;
+
+        document.getElementById('currentSituationLabel').textContent = 
+            `2. 情況描述（針對 ${target.seat} 號 ${target.name} 之主體視角）`;
+        document.getElementById('currentConclusionLabel').textContent = 
+            `3. 輔導結論與策略（針對 ${target.seat} 號 ${target.name} 之處遇方針）`;
+    }
+
+    // 7. 確認並歸檔紀錄 (前往步驟 3)
+    function saveAllGeneratedRecords() {
+        saveCurrentFormToActiveList();
+
+        for (let item of activeEditingList) {
+            if (!item.situation.trim() || !item.conclusion.trim()) {
+                alert(`請確認 ${item.seat} 號 ${item.name} 的情況描述與結論皆已填寫完整！`);
+                return;
+            }
+        }
+
+        activeEditingList.forEach(newRec => {
+            storedRecords.push({ ...newRec });
+        });
+
+        // 依座號升冪排序 (01～40 號)
+        storedRecords.sort((a, b) => parseInt(a.seatNo) - parseInt(b.seatNo));
+
+        renderSummaryTable();
+        alert(`成功歸檔 ${activeEditingList.length} 位學生的專屬紀錄！`);
+        navigateToPage(3);
+    }
+
+    // 8. 總表渲染
+    function renderSummaryTable() {
+        const tbody = document.getElementById('recordsTbody');
+        tbody.innerHTML = '';
+
+        if (storedRecords.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:24px;">目前尚無輔導紀錄</td></tr>`;
+            return;
+        }
+
+        storedRecords.forEach(r => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><span class="badge-seat">${r.seatNo} 號</span></td>
+                <td>${r.sid}</td>
+                <td><strong>${r.name}</strong></td>
+                <td>${r.date}</td>
+                <td style="white-space: pre-line;">${escapeHtml(r.situation)}</td>
+                <td style="white-space: pre-line;">${escapeHtml(r.conclusion)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function escapeHtml(text) {
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // 9. 匯出 CSV (UTF-8 with BOM 相容 Excel 與 Google 試算表)
+    function exportCSV() {
+        if (storedRecords.length === 0) {
+            alert('目前總表中無任何輔導紀錄可供匯出！');
+            return;
+        }
+
+        let csv = "\uFEFF座號,學號,姓名,日期,情況描述,輔導結論與策略\n";
+        storedRecords.forEach(r => {
+            const s = `"${r.situation.replace(/"/g, '""')}"`;
+            const c = `"${r.conclusion.replace(/"/g, '""')}"`;
+            csv += `${r.seatNo},${r.sid},${r.name},${r.date},${s},${c}\n`;
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `全班學生輔導紀錄彙整表_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    // 10. Google Apps Script 雲端試算表 Web App 串接接口
+    function syncWithGoogleSheet() {
+        if (storedRecords.length === 0) {
+            alert('目前總表中尚無紀錄可同步！');
+            return;
+        }
+
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbypeuCqNeViNLLBa3sZyJs2_A6hvE-q2pgdU2x9gtnHNLLqcVUYa2Uh10nErYQK-zJ3Hw/exec";
+
+        if (GOOGLE_SCRIPT_URL === "https://script.google.com/macros/s/AKfycbypeuCqNeViNLLBa3sZyJs2_A6hvE-q2pgdU2x9gtnHNLLqcVUYa2Uh10nErYQK-zJ3Hw/exec") {
+            alert(
+                "【Google 試算表自動同步設定說明】\n\n" +
+                "1. 請開啟您的 Google 試算表，點選「擴充功能」➔「Apps Script」。\n" +
+                "2. 貼入自動分頁建立腳本並部署為「網頁應用程式 (Web App)」。\n" +
+                "3. 將產生的 Web App 網址貼入本程式碼的 GOOGLE_SCRIPT_URL 變數中。\n\n" +
+                "💡 目前建議您直接點擊「匯出 CSV 檔」，即可直接在 Google 試算表「檔案 ➔ 匯入」整份紀錄！"
+            );
+            return;
+        }
+
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(storedRecords)
+        }).then(() => {
+            alert('資料已成功送出至 Google 試算表！');
+        }).catch(err => {
+            alert('同步至 Google 試算表失敗：' + err);
+        });
+    }
+</script>
+
+</body>
+</html>
